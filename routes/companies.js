@@ -82,7 +82,8 @@ router.patch('/:code', async function(req, res, next){
     return res.json({company: results.rows[0]});
 });
 
-/** Delete an existing company */
+
+/** Delete an existing company given company code */
 router.delete('/:code', async function(req, res, next){
     const code = req.params.code;
     
