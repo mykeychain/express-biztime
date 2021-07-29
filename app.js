@@ -9,9 +9,10 @@ const app = express();
 
 app.use(express.json());
 
+
 /** CRUD operations for companies */
 app.use("/companies", companyRoutes);
-
+app.use("/user", invoiceRoutes);
 
 /** 404 handler: matches unmatched routes; raises NotFoundError. */
 app.use(function (req, res, next) {
