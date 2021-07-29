@@ -4,18 +4,14 @@
 const express = require("express");
 const { NotFoundError } = require("./expressError");
 const companyRoutes = require("./routes/companies.js");
-const middleware = require("./middleware.js");
-
 
 const app = express();
 
 app.use(express.json());
 
-/** Middleware to check for valid company code */
-app.use(middleware.codeValidator);
-
 /** CRUD operations for companies */
 app.use("/companies", companyRoutes);
+
 
 /** 404 handler: matches unmatched routes; raises NotFoundError. */
 app.use(function (req, res, next) {

@@ -3,6 +3,7 @@
 const express = require("express");
 const app = require("../app.js");
 const db = require("../db.js");
+const { NotFoundError, BadRequestError } = require("../expressError.js");
 
 const router = new express.Router();
 
@@ -38,6 +39,8 @@ router.get("/:code", async function(req, res, next){
         `SELECT code, name, description
             FROM companies
             WHERE code = $1`, [code]);
+
+    if (!results.rows[0]) {return next(new NotFoundError())};
     
     return res.json({company: results.rows[0]});
 })
@@ -50,14 +53,19 @@ router.get("/:code", async function(req, res, next){
 router.post("/", async function(req, res, next){
     const {code, name, description} = req.body;
 
-    const results = await db.query(
-        `INSERT INTO companies (code, name, description)
-            VALUES ($1, $2, $3)
-            RETURNING code, name, description`, 
-        [code, name, description]
-    );
-
-    return res.status(201).json({company: results.rows[0]});
+    // same code twice? try/catch
+    try {
+        const results = await db.query(
+            `INSERT INTO companies (code, name, description)
+                VALUES ($1, $2, $3)
+                RETURNING code, name, description`, 
+            [code, name, description]
+        );
+    
+        return res.status(201).json({company: results.rows[0]});
+    } catch (error) {
+        return next(new BadRequestError("Company code already exists."));
+    };
 });
 
 
@@ -79,6 +87,7 @@ router.patch('/:code', async function(req, res, next){
         [name, description, code],
     );
     
+    if (!results.rows[0]) {return next(new NotFoundError("Company not found."))};
     return res.json({company: results.rows[0]});
 });
 
@@ -87,11 +96,14 @@ router.patch('/:code', async function(req, res, next){
 router.delete('/:code', async function(req, res, next){
     const code = req.params.code;
     
-    await db.query(
+    const results = await db.query(
         `DELETE FROM companies
-        WHERE code=$1`,
+            WHERE code=$1
+            RETURNING name`,
         [code],
     );
+
+    if (!results.rows[0]) {return next(new NotFoundError("Cannot delete company that doesn't exist"))};
 
     return res.json({status: "Deleted."});
 })
