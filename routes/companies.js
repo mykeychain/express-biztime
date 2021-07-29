@@ -43,7 +43,10 @@ router.get("/:code", async function(req, res, next){
 })
 
 
-/** Adds company to database, returns added company in JSON */
+/** Adds company to database, returns added company in JSON 
+ *      Input: {code, name, description}
+ *      Output: {company: {code, name, description}}
+*/
 router.post("/", async function(req, res, next){
     const {code, name, description} = req.body;
 
@@ -54,12 +57,15 @@ router.post("/", async function(req, res, next){
         [code, name, description]
     );
 
-    return res.json({company: results.rows[0]});
+    return res.status(201).json({company: results.rows[0]});
 });
 
 
-/** Edit existing company */
-router.post('/:code', async function(req, res, next){
+/** Edit existing company and returns updated company in JSON: 
+ *      Input: {name, description}
+ *      Output: {company: {code, name, description}}
+*/
+router.patch('/:code', async function(req, res, next){
     // validate code --- todo
     
     const code = req.params.code;
@@ -73,19 +79,20 @@ router.post('/:code', async function(req, res, next){
         [name, description, code],
     );
     
-  return res.json({company:results.row[0]});
+    return res.json({company: results.rows[0]});
 });
 
 /** Delete an existing company */
 router.delete('/:code', async function(req, res, next){
     const code = req.params.code;
     
-    await db.query(`
-        DELETE FROM companies
+    await db.query(
+        `DELETE FROM companies
         WHERE code=$1`,
         [code],
     );
-  return res.json({status: "Deleted."});
+
+    return res.json({status: "Deleted."});
 })
 
 module.exports = router;;
