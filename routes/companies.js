@@ -55,10 +55,26 @@ router.post("/", async function(req, res, next){
     );
 
     return res.json({company: results.rows[0]});
-})
+});
 
 
+/** Edit existing company */
+router.post('/:code', async function(req, res, next){
+    // validate code --- todo
+    
+    const code = req.params.code;
+    const {name, description} = req.body;
+    const results = await db.query(
+        `UPDATE companies 
+            SET name=$1,
+                description=$2
+            WHERE code=$3
+            RETURNING code, name, description`,
+        [name, description, code],
+    );
+    
+  return res.json({company:results.row[0]});
+});
 
 
-
-module.exports = router;
+module.exports = router;;
