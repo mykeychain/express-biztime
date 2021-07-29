@@ -31,26 +31,28 @@ router.get("/", async function(req, res, next){
 
 /** Queries db for a specific company and returns in JSON:
  *      {company: {code, name, description}}
+ * TODO: Update
  */
 router.get("/:code", async function(req, res, next){
     const code = req.params.code;
 
-    const compResults = db.query(
+    const cP = db.query(
         `SELECT code, name, description
             FROM companies
             WHERE code = $1`, [code]);
 
-    const invResults = db.query(
+    const invP = db.query(
         `SELECT id, comp_code, amt, paid, add_date, paid_date
         FROM invoices
         WHERE comp_code=$1`, [code]);
     
-    let allResults = await Promise.all([compResults, invResults]);
-    const company = allResults[0].rows[0];
+    let results = await Promise.all([cP, invP]);
+    const company = results[0].rows[0];
+    const invoices = results[1].rows;
 
     if (!company) {return next(new NotFoundError("Company not found"))};
 
-    company.invoices = allResults[1].rows;
+    company.invoices = invoices.map(i => i.id);
     return res.json({ company });
 })
 

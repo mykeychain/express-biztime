@@ -8,15 +8,6 @@ const { NotFoundError, BadRequestError } = require("../expressError.js");
 const router = new express.Router();
 
 
-
-// id SERIAL PRIMARY KEY,
-// comp_code TEXT NOT NULL REFERENCES companies ON DELETE CASCADE,
-// amt NUMERIC(10, 2) NOT NULL CHECK (amt >= 0),
-// paid BOOLEAN DEFAULT FALSE NOT NULL,
-// add_date  DATE DEFAULT CURRENT_DATE NOT NULL,
-// paid_date DATE
-
-
 /** Queries db for list of invoices and returns in JSON:
  *      {
  *          "invoices": [
@@ -57,21 +48,23 @@ router.get("/:id", async function(req, res, next){
         `SELECT id, amt, paid, add_date, paid_date, comp_code
             FROM invoices
             WHERE id = $1`, [invId]);
+            
+    let {comp_code, ...invoice} = invResults.rows[0];
 
     const compResults = await db.query(
         `SELECT code, name, description
             FROM companies
-            WHERE code = $1`, [invResults.comp_code]);
+            WHERE code = $1`, [comp_code]);
 
-    if (!invResults.rows[0]) {return next(new NotFoundError('Invoice not found.'))};
+    if (!invoice) {return next(new NotFoundError('Invoice not found.'))};
 
-    invResults.rows[0].company = compResults.rows[0];
+    invoice.company = compResults.rows[0];
 
-    return res.json({ invoice: invResults.rows[0] });
+    return res.json({ invoice });
 });
 
 /** Adds invoices to database, returns added invoices in JSON 
- *      Input:{comp_code, amt}
+ *      Input:{compCode, amt}
  *      Output:{invoice: {id, comp_code, amt, paid, add_date, paid_date}}
 */
 router.post("/", async function(req, res, next){
@@ -107,9 +100,10 @@ router.patch('/:id', async function(req, res, next){
             RETURNING id, comp_code, amt, paid, add_date, paid_date`,
         [amt, id],
     );
+    const invoice = results.rows[0];
     
-    if (!results.rows[0]) {return next(new NotFoundError("Invoice not found."))};
-    return res.json({invoice: results.rows[0]});
+    if (!invoice) {return next(new NotFoundError("Invoice not found."))};
+    return res.json({ invoice });
 });
 
 
