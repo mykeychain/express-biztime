@@ -64,9 +64,10 @@ router.get("/:id", async function(req, res, next){
             WHERE code = $1`, [invResults.comp_code]);
 
     if (!invResults.rows[0]) {return next(new NotFoundError('Invoice not found.'))};
+
     invResults.rows[0].company = compResults.rows[0];
 
-    return res.json({ invoices: invResults.rows[0] });
+    return res.json({ invoice: invResults.rows[0] });
 });
 
 /** Adds invoices to database, returns added invoices in JSON 
@@ -76,60 +77,54 @@ router.get("/:id", async function(req, res, next){
 router.post("/", async function(req, res, next){
     const {compCode, amt} = req.body;
 
-
+    try {
         const results = await db.query(
             `INSERT INTO invoices (comp_code, amt)
                 VALUES ($1, $2)
                 RETURNING id, comp_code, amt, paid, add_date, paid_date`, 
             [compCode, amt]
         );
-	    if(!results.rows[0]){ 
-			return next(new BadRequestError("Company code does not exists."));
-		}
-
-
-		return res.status(201)
-				  .json({invoices: results.rows[0]});
- 
-
+        
+        return res.status(201)
+                    .json({invoice: results.rows[0]});
+    } catch(error) {
+        return next(new BadRequestError("Company code does not exist."));
+    }
 });
 
 
-/** Edit existing invoices and returns updated invoices in JSON: 
- *      Input: {name, description}
- *      Output: {invoices: {code, name, description}}
+/** Edit existing invoice and returns updated invoice in JSON: 
+ *      Input: {amt}
+ *      Output: {invoices: {id, comp_code, amt, paid, add_date, paid_date}}
 */
-router.put('/:code', async function(req, res, next){
-    // validate code --- todo
-    
-    const code = req.params.code;
-    const {name, description} = req.body;
+router.patch('/:id', async function(req, res, next){    
+    const id = req.params.id;
+    const {amt} = req.body;
     const results = await db.query(
-        `UPDATE companies 
-            SET name=$1,
-                description=$2
-            WHERE code=$3
-            RETURNING code, name, description`,
-        [name, description, code],
+        `UPDATE invoices 
+            SET amt=$1
+            WHERE id=$2
+            RETURNING id, comp_code, amt, paid, add_date, paid_date`,
+        [amt, id],
     );
     
-    if (!results.rows[0]) {return next(new NotFoundError("Company not found."))};
-    return res.json({invoices: results.rows[0]});
+    if (!results.rows[0]) {return next(new NotFoundError("Invoice not found."))};
+    return res.json({invoice: results.rows[0]});
 });
 
 
 /** Delete an existing invoices given invoices code */
-router.delete('/:code', async function(req, res, next){
-    const code = req.params.code;
+router.delete('/:id', async function(req, res, next){
+    const id = req.params.id;
     
     const results = await db.query(
-        `DELETE FROM companies
-            WHERE code=$1
-            RETURNING name`,
-        [code],
+        `DELETE FROM invoices
+            WHERE id=$1
+            RETURNING amt`,
+        [id],
     );
 
-    if (!results.rows[0]) {return next(new NotFoundError("Cannot delete invoices that doesn't exist"))};
+    if (!results.rows[0]) {return next(new NotFoundError("Cannot delete invoice that doesn't exist"))};
 
     return res.json({status: "Deleted."});
 })
