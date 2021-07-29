@@ -2,11 +2,14 @@
 
 const express = require("express");
 const { NotFoundError } = require("./expressError");
+const companyRoutes = require("./routes/companies.js");
 
 const app = express();
 
 app.use(express.json());
 
+/** TODO: DOCStriNG */
+app.use("/companies", companyRoutes);
 
 /** 404 handler: matches unmatched routes; raises NotFoundError. */
 app.use(function (req, res, next) {
