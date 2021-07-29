@@ -14,10 +14,11 @@ async function codeValidator(req, res, next) {
             WHERE code=$1`, [code]);
 
     if (result.rowCount === 0) {
+        //  doesn't work with throw, gets UnhandledPromiseRejectionWarning
         return next(new NotFoundError("Company not found"))
     } else {
         return next();
     };
 }
 
-module.exports = {codeValidator: codeValidator};
+module.exports = {codeValidator};
